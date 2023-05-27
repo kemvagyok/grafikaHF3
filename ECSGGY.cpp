@@ -1,4 +1,4 @@
-//=============================================================================================
+Ôªø//=============================================================================================
 // Computer Graphics Sample Program: 3D engine-let
 // Shader: Gouraud, Phong, NPR
 // Material: diffuse + Phong-Blinn
@@ -443,25 +443,18 @@ public:
 	}
 };
 
-int n = 12;
-typedef std::vector<std::vector<float>> Matrix;
-float phiMatrix[12][12];
-float AMatrix[12][12];
-float computeTerrainHeight(float x, float y) {
-	float height = 0.0;
-	for (int f1 = 0; f1 < n; f1++)
-		for (int f2 = 0; f2 < n; f2++)	
-			height = height + AMatrix[f1][f2] * cosf(f1 * x + f2 * y + phiMatrix[f1][f2]);	
-	return height;
-}
-class Terrain : public ParamSurface {
+
+ class Terrain : public ParamSurface {
+	int n = 3;
+	float phiMatrix[12][12];
+	float AMatrix[12][12];
 public:
 	Terrain() {  
 	for (int f1 = 0; f1 < n; f1++)
 	{
 		for (int f2 = 0; f2 < n; f2++)
 		{
-			float phi = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 2));
+			float phi = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX)) * M_PI * 2;
 			float af1f2;
 			if (f1 + f2 > 0)
 				af1f2 = 0.2 / sqrtf(f1 * f1 + f2 * f2);
@@ -475,125 +468,19 @@ public:
 	}
 	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z)
 	{
-
-
 		U = U * 2.0f * M_PI  - M_PI,
 		V = V * 2.0f * M_PI -  M_PI;
 		X = U;
 		Y = V;
-		Z = computeTerrainHeight(X.f, Y.f);
+		float height = 0.0;
+		for (int f1 = 0; f1 < n; f1++)
+			for (int f2 = 0; f2 < n; f2++)
+				height = height + AMatrix[f1][f2] * cosf(f1 * X.f + f2 * Y.f + phiMatrix[f1][f2]);
+		Z = height;
 		
 	}
 };
 
-//---------------------------
-class Sphere : public ParamSurface {
-	//---------------------------
-public:
-	Sphere() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		U = U * 2.0f * (float)M_PI, V = V * (float)M_PI;
-		X = Cos(U) * Sin(V); Y = Sin(U) * Sin(V); Z = Cos(V);
-	}
-};
-
-//---------------------------
-class Tractricoid : public ParamSurface {
-	//---------------------------
-public:
-	Tractricoid() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		const float height = 3.0f;
-		U = U * height, V = V * 2 * M_PI;
-		X = Cos(V) / Cosh(U); Y = Sin(V) / Cosh(U); Z = U - Tanh(U);
-	}
-};
-
-//---------------------------
-class Cylinder : public ParamSurface {
-	//---------------------------
-public:
-	Cylinder() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		U = U * 2.0f * M_PI, V = V * 2 - 1.0f;
-		X = Cos(U); Y = Sin(U); Z = V;
-	}
-};
-
-//---------------------------
-class Torus : public ParamSurface {
-	//---------------------------
-public:
-	Torus() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		const float R = 1, r = 0.5f;
-		U = U * 2.0f * M_PI, V = V * 2.0f * M_PI;
-		Dnum2 D = Cos(U) * r + R;
-		X = D * Cos(V); Y = D * Sin(V); Z = Sin(U) * r;
-	}
-};
-
-//---------------------------
-class Mobius : public ParamSurface {
-	//---------------------------
-public:
-	Mobius() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		const float R = 1, width = 0.5f;
-		U = U * M_PI, V = (V - 0.5f) * width;
-		X = (Cos(U) * V + R) * Cos(U * 2);
-		Y = (Cos(U) * V + R) * Sin(U * 2);
-		Z = Sin(U) * V;
-	}
-};
-
-//---------------------------
-class Klein : public ParamSurface {
-	//---------------------------
-	const float size = 1.5f;
-public:
-	Klein() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		U = U * M_PI * 2, V = V * M_PI * 2;
-		Dnum2 a = Cos(U) * (Sin(U) + 1) * 0.3f;
-		Dnum2 b = Sin(U) * 0.8f;
-		Dnum2 c = (Cos(U) * (-0.1f) + 0.2f);
-		X = a + c * ((U.f > M_PI) ? Cos(V + M_PI) : Cos(U) * Cos(V));
-		Y = b + ((U.f > M_PI) ? 0 : c * Sin(U) * Cos(V));
-		Z = c * Sin(V);
-	}
-};
-
-//---------------------------
-class Boy : public ParamSurface {
-	//---------------------------
-public:
-	Boy() { create(); }
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		U = (U - 0.5f) * M_PI, V = V * M_PI;
-		float r2 = sqrt(2.0f);
-		Dnum2 denom = (Sin(U * 3) * Sin(V * 2) * (-3 / r2) + 3) * 1.2f;
-		Dnum2 CosV2 = Cos(V) * Cos(V);
-		X = (Cos(U * 2) * CosV2 * r2 + Cos(U) * Sin(V * 2)) / denom;
-		Y = (Sin(U * 2) * CosV2 * r2 - Sin(U) * Sin(V * 2)) / denom;
-		Z = (CosV2 * 3) / denom;
-	}
-};
-
-//---------------------------
-class Dini : public ParamSurface {
-	//---------------------------
-	Dnum2 a = 1.0f, b = 0.15f;
-public:
-	Dini() { create(); }
-
-	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z) {
-		U = U * 4 * M_PI, V = V * (1 - 0.1f) + 0.1f;
-		X = a * Cos(U) * Sin(V);
-		Y = a * Sin(U) * Sin(V);
-		Z = a * (Cos(V) + Log(Tan(V / 2))) + b * U + 3;
-	}
-};
 
 //---------------------------
 struct Object {
@@ -664,67 +551,16 @@ public:
 		Texture* texture15x20 = new CheckerBoardTexture(15, 20);
 
 		// Geometries
-		Geometry* sphere = new Sphere();
-		Geometry* tractricoid = new Tractricoid();
-		Geometry* torus = new Torus();
-		Geometry* mobius = new Mobius();
-		Geometry* klein = new Klein();
-		Geometry* boy = new Boy();
-		Geometry* dini = new Dini();
-		Geometry* flag = new Terrain();
+		Geometry* terrain = new Terrain();
 		
 		// Create objects by setting up their vertex data on the GPU
-		Object* flagObject1 = new Object(phongShader, material0, texture15x20, flag);
-		flagObject1->translation = vec3(0,-2,0);
+		Object* terrainObject1 = new Object(gouraudShader, material0, texture4x8, terrain);
+		terrainObject1->translation = vec3(0,-2,0);
 		//flagObject1->scale = vec3(0.5f, 1.2f, 0.5f);
-		flagObject1->rotationAngle = M_PI;
-		flagObject1->rotationAxis = vec3(0,1,0);
-		objects.push_back(flagObject1);
-		/*
-		// Create objects by setting up their vertex data on the GPU
-		Object* tractiObject1 = new Object(phongShader, material0, texture15x20, tractricoid);
-		tractiObject1->translation = vec3(-6, 3, 0);
-		tractiObject1->rotationAxis = vec3(1, 0, 0);
-		objects.push_back(tractiObject1);
-
-		Object* torusObject1 = new Object(phongShader, material0, texture4x8, torus);
-		torusObject1->translation = vec3(-3, 3, 0);
-		torusObject1->scale = vec3(0.7f, 0.7f, 0.7f);
-		torusObject1->rotationAxis = vec3(1, 0, 0);
-		objects.push_back(torusObject1);
-
-		Object* mobiusObject1 = new Object(phongShader, material0, texture4x8, mobius);
-		mobiusObject1->translation = vec3(0, 3, 0);
-		mobiusObject1->scale = vec3(0.7f, 0.7f, 0.7f);
-		mobiusObject1->rotationAxis = vec3(1, 0, 0);
-		objects.push_back(mobiusObject1);
-
-		Object* kleinObject1 = new Object(phongShader, material1, texture4x8, klein);
-		kleinObject1->translation = vec3(3, 3, 0);
-		objects.push_back(kleinObject1);
-
-		Object* boyObject1 = new Object(phongShader, material1, texture15x20, boy);
-		boyObject1->translation = vec3(6, 3, 0);
-		objects.push_back(boyObject1);
-
-		Object* diniObject1 = new Object(phongShader, material1, texture15x20, dini);
-		diniObject1->translation = vec3(9, 3, 0);
-		diniObject1->scale = vec3(0.7f, 0.7f, 0.7f);
-		diniObject1->rotationAxis = vec3(1, 0, 0);
-		objects.push_back(diniObject1);
-
-		int nObjects = objects.size();
-		for (int i = 0; i < nObjects; i++) {
-			Object* object = new Object(*objects[i]);
-			object->translation.y -= 3;
-			object->shader = gouraudShader;
-			objects.push_back(object);
-			object = new Object(*objects[i]);
-			object->translation.y -= 6;
-			object->shader = nprShader;
-			objects.push_back(object);
-		}
-		*/
+		terrainObject1->rotationAngle = M_PI;
+		terrainObject1->rotationAxis = vec3(0,1,0);
+		objects.push_back(terrainObject1);
+		
 		// Camera
 		camera.wEye = vec3(0, 0, 8);
 		camera.wLookat = vec3(0, 0, 0);
@@ -793,7 +629,7 @@ void onMouseMotion(int pX, int pY) {
 // Idle event indicating that some time elapsed: do animation here
 void onIdle() {
 	static float tend = 0;
-	const float dt = 0.1f; // dt is îinfinitesimalî
+	const float dt = 0.1f; // dt is ‚Äùinfinitesimal‚Äù
 	float tstart = tend;
 	tend = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 
