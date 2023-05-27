@@ -40,7 +40,7 @@ template<class T> Dnum<T> Pow(Dnum<T> g, float n) {
 
 typedef Dnum<vec2> Dnum2;
 
-const int tessellationLevel = 20;
+const int tessellationLevel = 50;
 
 //---------------------------
 struct Camera { // 3D camera
@@ -443,10 +443,10 @@ public:
 	}
 };
 
-int n = 3;
+int n = 12;
 typedef std::vector<std::vector<float>> Matrix;
-float phiMatrix[3][3];
-float AMatrix[3][3];
+float phiMatrix[12][12];
+float AMatrix[12][12];
 float computeTerrainHeight(float x, float y) {
 	float height = 0.0;
 	for (int f1 = 0; f1 < n; f1++)
@@ -456,23 +456,26 @@ float computeTerrainHeight(float x, float y) {
 }
 class Terrain : public ParamSurface {
 public:
-	Terrain() { create(); }
+	Terrain() {  
+	for (int f1 = 0; f1 < n; f1++)
+	{
+		for (int f2 = 0; f2 < n; f2++)
+		{
+			float phi = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 2));
+			float af1f2;
+			if (f1 + f2 > 0)
+				af1f2 = 0.2 / sqrtf(f1 * f1 + f2 * f2);
+			else
+				af1f2 = 0.0;
+			phiMatrix[f1][f2] = phi;
+			AMatrix[f1][f2] = af1f2;
+		};
+	}
+	create();
+	}
 	void eval(Dnum2& U, Dnum2& V, Dnum2& X, Dnum2& Y, Dnum2& Z)
 	{
-		for (int f1 = 0; f1 < n; f1++)
-		{
-			for (int f2 = 0; f2 < n; f2++)
-			{
-				float phi = (double)rand() / RAND_MAX * 2 * M_PI;
-				float af1f2;
-				if (f1 + f2 > 0)
-					af1f2 = 0.5 / sqrtf(f1 * f1 + f2 * f2);
-				else
-					af1f2 = 0.8;
-				phiMatrix[f1][f2] = phi;
-				AMatrix[f1][f2] = af1f2;
-			};
-		}
+
 
 		U = U * 2.0f * M_PI  - M_PI,
 		V = V * 2.0f * M_PI -  M_PI;
