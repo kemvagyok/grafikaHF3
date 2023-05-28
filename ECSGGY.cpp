@@ -49,7 +49,7 @@ struct Camera { // 3D camera
 	float fov, asp, fp, bp;		// intrinsic
 public:
 	Camera() {
-		asp = (float)windowWidth / windowHeight;
+		asp = (float)(windowWidth/2) / windowHeight;
 		fov = 75.0f * (float)M_PI / 180.0f;
 		fp = 1; bp = 20;
 	}
@@ -116,14 +116,14 @@ public:
 	virtual void Bind(RenderState state) = 0;
 
 	void setUniformMaterial(const Material& material, const std::string& name) {
-		setUniform(material.kd, name + ".kd");
+		//setUniform(material.kd, name + ".kd");
 		setUniform(material.ks, name + ".ks");
-		setUniform(material.ka, name + ".ka");
+		//setUniform(material.ka, name + ".ka");
 		setUniform(material.shininess, name + ".shininess");
 	}
 
 	void setUniformLight(const Light& light, const std::string& name) {
-		setUniform(light.La, name + ".La");
+		//setUniform(light.La, name + ".La");
 		setUniform(light.Le, name + ".Le");
 		setUniform(light.wLightPos, name + ".wLightPos");
 	}
@@ -170,7 +170,7 @@ class GouraudShader : public Shader {
 				vec3 L = normalize(lights[i].wLightPos.xyz * wPos.w - wPos.xyz * lights[i].wLightPos.w);
 				vec3 H = normalize(L + V);
 				float cost = max(dot(N,L), 0), cosd = max(dot(N,H), 0);
-				radiance += material.ka * lights[i].La + (material.kd * cost + material.ks * pow(cosd, material.shininess)) * lights[i].Le;
+				radiance += lights[i].Le * vtxPos.z * cost + lights[i].Le * material.ks * pow(cosd, material.shininess);			
 			}
 		}
 	)";
@@ -445,7 +445,7 @@ public:
 
 
  class Terrain : public ParamSurface {
-	int n = 3;
+	int n = 12;
 	float phiMatrix[12][12];
 	float AMatrix[12][12];
 public:
@@ -524,7 +524,7 @@ public:
 class Scene {
 	//---------------------------
 	std::vector<Object*> objects;
-	Camera camera; // 3D camera
+	std::vector<Camera> cameras; // 3D camera
 	std::vector<Light> lights;
 public:
 	void Build() {
@@ -535,10 +535,10 @@ public:
 
 		// Materials
 		Material* material0 = new Material;
-		material0->kd = vec3(0.6f, 0.4f, 0.2f);
-		material0->ks = vec3(4, 4, 4);
-		material0->ka = vec3(0.1f, 0.1f, 0.1f);
-		material0->shininess = 100;
+		material0->kd = vec3(0,0,0);
+		material0->ks = vec3(0.5,0.5,0.5);
+		material0->ka = vec3();
+		material0->shininess = 30;
 
 		Material* material1 = new Material;
 		material1->kd = vec3(0.8f, 0.6f, 0.4f);
@@ -555,18 +555,24 @@ public:
 		
 		// Create objects by setting up their vertex data on the GPU
 		Object* terrainObject1 = new Object(gouraudShader, material0, texture4x8, terrain);
-		terrainObject1->translation = vec3(0,-2,0);
-		//flagObject1->scale = vec3(0.5f, 1.2f, 0.5f);
+		terrainObject1->translation = vec3(1,0,-0.5);
 		terrainObject1->rotationAngle = M_PI;
 		terrainObject1->rotationAxis = vec3(0,1,0);
 		objects.push_back(terrainObject1);
 		
-		// Camera
-		camera.wEye = vec3(0, 0, 8);
-		camera.wLookat = vec3(0, 0, 0);
-		camera.wVup = vec3(0, 1, 0);
+		Camera camera1;
+		Camera camera2;
+		// Camera1
+		camera1.wEye = vec3(0, 0, 6);
+		camera1.wLookat = vec3(0, 0, 0);
+		camera1.wVup = vec3(0, 1, 0);
+		cameras.push_back(camera1);
+		// Camera2
+		camera2.wEye = vec3(0, 0, -16);
+		camera2.wLookat = vec3(0, 0, 0);
+		camera2.wVup = vec3(0, 1, 0);
+		cameras.push_back(camera2);
 
-		// Lights
 		lights.resize(3);
 		lights[0].wLightPos = vec4(5, 5, 4, 0);	// ideal point -> directional light source
 		lights[0].La = vec3(0.1f, 0.1f, 1);
@@ -579,19 +585,20 @@ public:
 		lights[2].wLightPos = vec4(-5, 5, 5, 0);	// ideal point -> directional light source
 		lights[2].La = vec3(0.1f, 0.1f, 0.1f);
 		lights[2].Le = vec3(0, 0, 3);
+
 	}
 
-	void Render() {
+	void Render(int index) {
 		RenderState state;
-		state.wEye = camera.wEye;
-		state.V = camera.V();
-		state.P = camera.P();
+		state.wEye = cameras[index].wEye;
+		state.V = cameras[index].V();
+		state.P = cameras[index].P();
 		state.lights = lights;
 		for (Object* obj : objects) obj->Draw(state);
 	}
 
 	void Animate(float tstart, float tend) {
-		for (Object* obj : objects) obj->Animate(tstart, tend);
+		//for (Object* obj : objects) obj->Animate(tstart, tend);
 	}
 };
 
@@ -607,9 +614,13 @@ void onInitialization() {
 
 // Window has become invalid: Redraw
 void onDisplay() {
+
 	glClearColor(0.5f, 0.5f, 0.8f, 1.0f);							// background color 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the screen
-	scene.Render();
+	glViewport(0, 0, windowWidth/2, windowHeight);
+	scene.Render(0);
+	glViewport(300, 0, windowWidth/2, windowHeight);
+	scene.Render(1);
 	glutSwapBuffers();									// exchange the two buffers
 }
 
